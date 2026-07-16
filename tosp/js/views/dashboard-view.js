@@ -1,32 +1,58 @@
-// views/dashboard-view.js — landing screen: programme summary, overview, reset.
+// views/dashboard-view.js — landing screen: welcome, progress at a glance,
+// readiness statuses, recommended next action, and a condensed source panel.
 
-import {
-  PROGRAMME, MODULES, LESSONS, SOURCE_DOCUMENTS,
-  PROGRESSION_RULES, EVALUATION_SCORE_BANDS, EVALUATION_SCORE_BANDS_SOURCE,
-  PROBATION_SCORE_GATES, PROBATION_SCORE_GATES_SOURCE,
-} from '../data.js';
-import { CONFIG, PROTOTYPE_WARNING } from '../config.js';
+import { PROGRAMME, MODULES, LESSONS, QUIZZES } from '../data.js';
+import { PROTOTYPE_WARNING, DEMO_LEARNER } from '../config.js';
 import {
   getProgress,
   getOverallProgress,
-  resetAllProgress,
   getModuleStatus,
   getPreviousModule,
+  getAsinAllocationReadiness,
+  getIndependentOwnershipReadiness,
+  getMostRecentlyCompletedModule,
+  getActivitySummary,
+  isSignedOff,
 } from '../services/progress-service.js';
 import { determineNextModule } from '../rules/module-access.js';
-import { calculateModuleProgress } from '../rules/progression.js';
+import { calculateOverallProgress, calculateModuleProgress } from '../rules/progression.js';
+import { getAttempts } from '../services/quiz-service.js';
 import { moduleCard } from '../components/module-card.js';
-import { rerender } from '../router.js';
+import { statusBadge } from '../components/status-badge.js';
+
+const EVALUATION_MODULES = MODULES.filter((m) => m.orderIndex <= 7);
+const PH_MODULES = MODULES.filter((m) => m.orderIndex > 7);
+
+function readinessRow(label, ready, note) {
+  return `
+    <div class="readiness-row">
+      <span class="readiness-row__icon" aria-hidden="true">${ready ? '✓' : '○'}</span>
+      <div>
+        <p class="readiness-row__label">${label}</p>
+        <p class="readiness-row__note muted small">${note}</p>
+      </div>
+      ${statusBadge(ready ? 'passed' : 'locked')}
+    </div>
+  `;
+}
 
 export function render(container) {
   const progress = getProgress();
   const overall = getOverallProgress();
+  const evaluationProgress = calculateOverallProgress(EVALUATION_MODULES, LESSONS, QUIZZES, progress);
+  const phProgress = calculateOverallProgress(PH_MODULES, LESSONS, QUIZZES, progress);
   const nextModule = determineNextModule(MODULES, progress);
+  const asinReady = getAsinAllocationReadiness();
+  const ownershipReady = getIndependentOwnershipReadiness();
+  const recentModule = getMostRecentlyCompletedModule();
+  const activity = getActivitySummary();
 
   const moduleCardsHtml = MODULES.map((module) => {
     const status = getModuleStatus(module.id);
-    const mp = calculateModuleProgress(module.id, LESSONS, { id: `${module.id}-quiz` }, progress, !!module.requiresSignoff);
     const previous = getPreviousModule(module.id);
+    const attempts = getAttempts(`${module.id}-quiz`);
+    const lastAttempt = attempts[attempts.length - 1] || null;
+    const mp = calculateModuleProgress(module.id, LESSONS, { id: `${module.id}-quiz` }, progress, !!module.requiresSignoff);
     return moduleCard({
       module,
       status,
@@ -34,27 +60,65 @@ export function render(container) {
       lockReason: status === 'locked' && previous
         ? `Pass the "${previous.title}" Skill Check${previous.requiresSignoff ? ' and complete its Team Leader Sign-off' : ''} to unlock this module.`
         : null,
+      quizResult: lastAttempt ? { scorePct: lastAttempt.scorePct, passed: lastAttempt.passed, attemptNumber: lastAttempt.attemptNumber } : null,
+      signoffInfo: module.requiresSignoff ? { required: true, signedOff: isSignedOff(module.id) } : null,
       action: { label: status === 'locked' ? 'Locked' : 'Open Module', route: `/module/${module.id}` },
     });
   }).join('');
 
   container.innerHTML = `
-    <section class="panel prototype-banner">
-      <p>⚠ ${PROTOTYPE_WARNING}</p>
+    <section class="panel prototype-banner" role="note">
+      <p><span aria-hidden="true">⚠</span> ${PROTOTYPE_WARNING}</p>
     </section>
 
-    <section class="panel">
-      <h1>${PROGRAMME.title}</h1>
+    <section class="panel dashboard-welcome">
+      <h1>Welcome back, ${DEMO_LEARNER.displayName}</h1>
+      <p class="muted">${PROGRAMME.title} <span class="muted small">· v${PROGRAMME.version}</span></p>
       <p class="muted">${PROGRAMME.description}</p>
-      <dl class="summary-grid">
-        <div><dt>Overall progress</dt><dd>${overall.overallPct}%</dd></div>
-        <div><dt>Modules passed</dt><dd>${overall.completedModuleCount} / ${overall.totalModules}</dd></div>
-        <div><dt>Current module</dt><dd>${nextModule ? nextModule.title : 'Programme complete'}</dd></div>
-        <div><dt>Programme version</dt><dd>${PROGRAMME.version}</dd></div>
-      </dl>
+    </section>
+
+    <section class="panel-grid">
+      <div class="panel stat-card">
+        <h2>Overall Progress</h2>
+        <p class="stat-card__value">${overall.overallPct}%</p>
+        <p class="muted small">${overall.completedModuleCount} of ${overall.totalModules} modules complete</p>
+      </div>
+      <div class="panel stat-card">
+        <h2>7-Day Evaluation</h2>
+        <p class="stat-card__value">${evaluationProgress.overallPct}%</p>
+        <p class="muted small">${evaluationProgress.completedModuleCount} of ${evaluationProgress.totalModules} days complete</p>
+      </div>
+      <div class="panel stat-card">
+        <h2>PH Competency Path</h2>
+        <p class="stat-card__value">${phProgress.overallPct}%</p>
+        <p class="muted small">${phProgress.completedModuleCount} of ${phProgress.totalModules} steps complete</p>
+      </div>
+    </section>
+
+    <section class="panel recommended-action">
+      <h2>Recommended Next Action</h2>
       ${nextModule
-        ? `<button type="button" class="btn btn--primary" data-nav="/module/${nextModule.id}">Continue: ${nextModule.title}</button>`
-        : `<button type="button" class="btn btn--primary" data-nav="/completion">View Completion Summary</button>`}
+        ? `<p>Continue with <strong>Module ${nextModule.orderIndex}: ${nextModule.title}</strong>.</p>
+           <button type="button" class="btn btn--primary" data-nav="/module/${nextModule.id}">Continue: ${nextModule.title}</button>`
+        : `<p>You have completed every module in the programme.</p>
+           <button type="button" class="btn btn--primary" data-nav="/completion">View Completion Summary</button>`}
+    </section>
+
+    <section class="panel-grid">
+      <div class="panel">
+        <h2>Readiness Status</h2>
+        ${readinessRow('ASIN Allocation Readiness', asinReady, 'PH Learning Path Steps 1–6 fully complete — the minimum before ASIN ownership can be assigned (Source: PH/Sales BGCT Handbook v1.0 — Section 1).')}
+        ${readinessRow('Independent Ownership Readiness', ownershipReady, 'All 11 PH Learning Path steps fully complete, in order (Source: PH/Sales BGCT Handbook v1.0 — Section 1, Best Practice).')}
+      </div>
+      <div class="panel">
+        <h2>Activity Summary</h2>
+        <dl class="summary-grid">
+          <div><dt>Recently completed module</dt><dd>${recentModule ? recentModule.title : 'None yet'}</dd></div>
+          <div><dt>Lessons completed</dt><dd>${activity.lessonsCompleted}</dd></div>
+          <div><dt>Skill Check attempts</dt><dd>${activity.totalAttempts}</dd></div>
+          <div><dt>Most recent activity</dt><dd>${activity.mostRecentActivity ? new Date(activity.mostRecentActivity).toLocaleString() : '—'}</dd></div>
+        </dl>
+      </div>
     </section>
 
     <section class="panel">
@@ -65,52 +129,16 @@ export function render(container) {
       <div class="module-grid">${moduleCardsHtml}</div>
     </section>
 
-    <section class="panel">
-      <h2>Programme &amp; Source Reference</h2>
-      <p class="muted small">Programme content is sourced directly from the following documents. Progress, quiz results, and sign-offs recorded in this browser remain PROTOTYPE_ONLY and are not official onboarding evidence.</p>
-      <ul class="reference-list">
-        ${SOURCE_DOCUMENTS.map((d) => `<li><strong>${d.title}</strong> — ${d.version}, effective ${d.effectiveDate}. <span class="muted small">${d.confidentiality}</span></li>`).join('')}
-      </ul>
-
-      <h3>Key Progression Rules</h3>
-      <ul class="reference-list">
-        ${PROGRESSION_RULES.map((r) => `<li>${r.rule} <span class="muted small">— Source: ${r.source}</span></li>`).join('')}
-      </ul>
-
-      <h3>Day 7 Evaluation Score Interpretation</h3>
-      <p class="muted small">Source: ${EVALUATION_SCORE_BANDS_SOURCE}</p>
-      <table class="reference-table">
-        <thead><tr><th>Score</th><th>Interpretation</th></tr></thead>
-        <tbody>
-          ${EVALUATION_SCORE_BANDS.map((b) => `<tr><td>${b.range}</td><td>${b.interpretation}</td></tr>`).join('')}
-        </tbody>
-      </table>
-
-      <h3>Probation Progression Score Gates</h3>
-      <p class="muted small">Source: ${PROBATION_SCORE_GATES_SOURCE}</p>
-      <table class="reference-table">
-        <thead><tr><th>Period</th><th>Minimum Score to Progress</th></tr></thead>
-        <tbody>
-          ${PROBATION_SCORE_GATES.map((g) => `<tr><td>${g.period}</td><td>${g.minimumScore} / 100</td></tr>`).join('')}
-        </tbody>
-      </table>
-      <p class="muted small">These figures describe the source documents' whole-programme evaluation model; this prototype's per-module Skill Check passing percentage (below) is a separate, unsourced prototype default — see README.md.</p>
-    </section>
-
-    <section class="panel danger-zone">
-      <h2>Demo Controls</h2>
-      <p class="muted">Resetting removes only this prototype's local progress (storage key <code>tosp.prototype.v${CONFIG.storageVersion}</code>). This cannot be undone.</p>
-      <button type="button" class="btn btn--danger" id="reset-progress-btn" ${CONFIG.allowResetDemoProgress ? '' : 'disabled'}>Reset Demo Progress</button>
+    <section class="panel source-summary">
+      <div class="panel__header-row">
+        <h2>Programme Source Reference</h2>
+        <button type="button" class="btn btn--ghost" data-nav="/sources">View Full Source Reference</button>
+      </div>
+      <p class="muted small">
+        Content is sourced from the Digitweb Lanka New Employee Onboarding Guide v1.0 and the
+        PH/Sales BGCT Handbook v1.0 (status FINAL_TRUTH). Progress and sign-offs recorded here
+        remain PROTOTYPE_ONLY.
+      </p>
     </section>
   `;
-
-  const resetBtn = container.querySelector('#reset-progress-btn');
-  resetBtn.addEventListener('click', () => {
-    const confirmed = window.confirm(
-      'Reset all demo progress? This clears completed lessons, quiz attempts, and unlocked modules stored in this browser.'
-    );
-    if (!confirmed) return;
-    resetAllProgress();
-    rerender();
-  });
 }

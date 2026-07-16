@@ -4,12 +4,30 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TOSP — Team Onboarding &amp; Skill Progression Platform (Prototype)</title>
+  <script>
+    // Sets the theme before first paint so there is no flash of the wrong
+    // theme while the module scripts load. Mirrors theme-service.js's
+    // resolution order (saved preference -> OS preference -> light).
+    (function () {
+      try {
+        var saved = window.localStorage.getItem('tosp.ui.theme.v1');
+        var theme = saved === 'light' || saved === 'dark'
+          ? saved
+          : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (err) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <div id="app">
-    <header id="app-header" class="app-header" aria-label="Application header"></header>
-    <main id="app-main" class="app-main" aria-live="polite"></main>
+  <a href="#app-main" class="skip-link">Skip to main content</a>
+
+  <div id="app" class="app-shell">
+    <div id="app-shell-nav"></div>
+    <main id="app-main" class="app-main" tabindex="-1" aria-live="polite"></main>
     <footer class="app-footer">
       <p>
         TOSP · Team Onboarding &amp; Skill Progression Platform ·

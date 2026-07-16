@@ -11,6 +11,8 @@ import {
   determineNextModule,
   isProgrammeComplete,
   isModuleFullyComplete,
+  isAsinAllocationReady,
+  isIndependentOwnershipReady,
 } from '../rules/module-access.js';
 
 export function getProgress() {
@@ -61,6 +63,63 @@ export function getCurrentModule() {
 export function programmeIsComplete() {
   const progress = loadProgress();
   return isProgrammeComplete(MODULES, progress);
+}
+
+export function getAsinAllocationReadiness() {
+  const progress = loadProgress();
+  return isAsinAllocationReady(MODULES, progress);
+}
+
+export function getIndependentOwnershipReadiness() {
+  const progress = loadProgress();
+  return isIndependentOwnershipReady(MODULES, progress);
+}
+
+/**
+ * The most recently fully-completed module, derived from each completed
+ * module's last passing quiz attempt timestamp (the only completion
+ * timestamp the data model records). Returns null if nothing is complete yet.
+ */
+export function getMostRecentlyCompletedModule() {
+  const progress = loadProgress();
+  let latest = null;
+  let latestTime = -Infinity;
+
+  for (const module of MODULES) {
+    if (!isModuleFullyComplete(module, progress)) continue;
+    const attempts = progress.quizAttempts[`${module.id}-quiz`] || [];
+    const passedAttempt = [...attempts].reverse().find((a) => a.passed);
+    const time = passedAttempt ? new Date(passedAttempt.answeredAt).getTime() : 0;
+    if (time >= latestTime) {
+      latestTime = time;
+      latest = module;
+    }
+  }
+
+  return latest;
+}
+
+/**
+ * Honest activity summary derived only from data the app actually tracks
+ * (no fabricated streaks — lesson completions and quiz attempts have no
+ * per-item timestamp in this data model beyond quiz attempts).
+ */
+export function getActivitySummary() {
+  const progress = loadProgress();
+  const lessonsCompleted = progress.completedLessonIds.length;
+  const totalAttempts = Object.values(progress.quizAttempts).reduce((sum, arr) => sum + arr.length, 0);
+
+  let mostRecentActivity = null;
+  for (const attempts of Object.values(progress.quizAttempts)) {
+    for (const attempt of attempts) {
+      const time = new Date(attempt.answeredAt).getTime();
+      if (!mostRecentActivity || time > new Date(mostRecentActivity).getTime()) {
+        mostRecentActivity = attempt.answeredAt;
+      }
+    }
+  }
+
+  return { lessonsCompleted, totalAttempts, mostRecentActivity };
 }
 
 /**

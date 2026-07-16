@@ -22,6 +22,16 @@ function initialProgress() {
   };
 }
 
+// Set only when a *previously saved* value existed but could not be parsed
+// or matched the expected shape — never for a simple first-visit (no raw
+// value at all). Read once at app startup to show a one-time recovery
+// notice; see app.js.
+let lastLoadWasCorrupted = false;
+
+export function wasLastLoadCorrupted() {
+  return lastLoadWasCorrupted;
+}
+
 function isValidProgressShape(value) {
   return (
     value &&
@@ -45,21 +55,34 @@ export function loadProgress() {
   try {
     raw = window.localStorage.getItem(STORAGE_KEY);
   } catch (err) {
+    lastLoadWasCorrupted = false; // localStorage itself unavailable — not "corrupted", just inaccessible.
     return initialProgress();
   }
 
-  if (!raw) return initialProgress();
+  if (!raw) {
+    lastLoadWasCorrupted = false; // First visit — nothing to recover from.
+    return initialProgress();
+  }
 
   let parsed;
   try {
     parsed = JSON.parse(raw);
   } catch (err) {
+    lastLoadWasCorrupted = true; // A value existed but wasn't valid JSON.
     return initialProgress();
   }
 
-  if (!isValidProgressShape(parsed) || parsed.storageVersion !== CONFIG.storageVersion) {
+  if (!isValidProgressShape(parsed)) {
+    lastLoadWasCorrupted = true; // Valid JSON, but not the shape we expect.
     return initialProgress();
   }
+
+  if (parsed.storageVersion !== CONFIG.storageVersion) {
+    lastLoadWasCorrupted = false; // Intentional migration (see storageVersion docs), not corruption.
+    return initialProgress();
+  }
+
+  lastLoadWasCorrupted = false;
 
   // Module 1 must always be reachable even if stored data predates a rule change.
   if (!parsed.unlockedModuleIds.includes(MODULES[0].id)) {

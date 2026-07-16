@@ -57,3 +57,25 @@ export function determineNextModule(modules, progress) {
 export function isProgrammeComplete(modules, progress) {
   return modules.every((m) => isModuleFullyComplete(m, progress));
 }
+
+/**
+ * ASIN allocation readiness: the PH/Sales BGCT Handbook states no staff
+ * member should be assigned ASIN ownership before completing the first 6
+ * PH Learning Path steps (Section 1, progression model note). PH-tier
+ * modules are identified generically via requiresSignoff — the first 6 of
+ * them, in order, are "Steps 1-6".
+ */
+export function isAsinAllocationReady(modules, progress) {
+  const phSteps = modules.filter((m) => m.requiresSignoff).sort((a, b) => a.orderIndex - b.orderIndex);
+  const firstSix = phSteps.slice(0, 6);
+  return firstSix.length > 0 && firstSix.every((m) => isModuleFullyComplete(m, progress));
+}
+
+/**
+ * Independent ASIN ownership readiness: all 11 PH Learning Path steps
+ * completed in order (Section 1, Best Practice).
+ */
+export function isIndependentOwnershipReady(modules, progress) {
+  const phSteps = modules.filter((m) => m.requiresSignoff);
+  return phSteps.length > 0 && phSteps.every((m) => isModuleFullyComplete(m, progress));
+}

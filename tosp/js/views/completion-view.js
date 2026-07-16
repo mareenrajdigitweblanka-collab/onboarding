@@ -1,8 +1,10 @@
 // views/completion-view.js — programme completion summary.
 
-import { PROGRAMME, MODULES } from '../data.js';
+import { PROGRAMME } from '../data.js';
 import { CONFIG, PROTOTYPE_WARNING, DEMO_LEARNER } from '../config.js';
 import { getProgress, getOverallProgress, programmeIsComplete, resetAllProgress } from '../services/progress-service.js';
+import { confirmDialog } from '../components/confirm-dialog.js';
+import { showToast } from '../components/toast.js';
 import { navigate } from '../router.js';
 
 export function render(container) {
@@ -10,7 +12,7 @@ export function render(container) {
     container.innerHTML = `
       <section class="panel">
         <h1>Programme Not Yet Complete</h1>
-        <p class="muted">Pass every module's Skill Check to reach the completion summary.</p>
+        <p class="muted">Pass every module's Skill Check (and complete Team Leader Sign-off where required) to reach the completion summary.</p>
         <button type="button" class="btn btn--primary" data-nav="/programme">View Programme Journey</button>
       </section>
     `;
@@ -24,12 +26,12 @@ export function render(container) {
     : '—';
 
   container.innerHTML = `
-    <section class="panel prototype-banner">
-      <p>⚠ ${PROTOTYPE_WARNING}</p>
+    <section class="panel prototype-banner" role="note">
+      <p><span aria-hidden="true">⚠</span> ${PROTOTYPE_WARNING}</p>
     </section>
 
     <section class="panel completion-panel">
-      <h1>🎉 Congratulations, ${DEMO_LEARNER.displayName}!</h1>
+      <h1><span aria-hidden="true">🎉</span> Congratulations, ${DEMO_LEARNER.displayName}!</h1>
       <p class="muted">You have completed the ${PROGRAMME.title}.</p>
       <dl class="summary-grid">
         <div><dt>Programme</dt><dd>${PROGRAMME.title}</dd></div>
@@ -47,10 +49,17 @@ export function render(container) {
   `;
 
   const resetBtn = container.querySelector('#reset-progress-btn');
-  resetBtn.addEventListener('click', () => {
-    const confirmed = window.confirm('Reset all demo progress? This clears completed lessons, quiz attempts, and unlocked modules stored in this browser.');
+  resetBtn.addEventListener('click', async () => {
+    const confirmed = await confirmDialog({
+      title: 'Reset demo progress?',
+      message: 'This clears completed lessons, quiz attempts, sign-offs, and unlocked modules stored in this browser. This cannot be undone.',
+      confirmLabel: 'Reset progress',
+      cancelLabel: 'Cancel',
+      danger: true,
+    });
     if (!confirmed) return;
     resetAllProgress();
+    showToast('Demo progress has been reset.', { type: 'success' });
     navigate('/dashboard');
   });
 }

@@ -1,7 +1,10 @@
-// views/lesson-view.js — single lesson content with completion and navigation.
+// views/lesson-view.js — single lesson content with completion, navigation,
+// and a speaker control scoped to exactly this lesson's readable content.
 
 import { MODULES, LESSONS } from '../data.js';
 import { getProgress, canOpenModule, markLessonComplete } from '../services/progress-service.js';
+import { renderSpeakerControl, wireSpeakerControl } from '../components/speaker-control.js';
+import { showToast } from '../components/toast.js';
 import { rerender, navigate } from '../router.js';
 
 export function render(container, params) {
@@ -30,19 +33,31 @@ export function render(container, params) {
   const index = moduleLessons.findIndex((l) => l.id === lesson.id);
   const prevLesson = moduleLessons[index - 1] || null;
   const nextLesson = moduleLessons[index + 1] || null;
+  const speechText = `${lesson.title}. ${lesson.content}`;
 
   container.innerHTML = `
+    <div class="breadcrumb">
+      <button type="button" class="breadcrumb__link" data-nav="/dashboard">Dashboard</button>
+      <span class="breadcrumb__sep" aria-hidden="true">/</span>
+      <button type="button" class="breadcrumb__link" data-nav="/module/${module.id}">${module.title}</button>
+      <span class="breadcrumb__sep" aria-hidden="true">/</span>
+      <span class="breadcrumb__current">${lesson.title}</span>
+    </div>
+
     <section class="panel">
       <div class="panel__header-row">
         <h1>${lesson.title}</h1>
         <button type="button" class="btn btn--ghost" data-nav="/module/${module.id}">Back to Module</button>
       </div>
-      <p class="muted">${module.title} · Lesson ${index + 1} of ${moduleLessons.length} · ⏱ ${lesson.estimatedMinutes} min</p>
+      <p class="muted">${module.title} · Lesson ${index + 1} of ${moduleLessons.length} · <span aria-hidden="true">⏱</span> ${lesson.estimatedMinutes} min</p>
+      ${renderSpeakerControl('lesson-speaker', 'Listen to this lesson')}
     </section>
 
     <section class="panel lesson-content">
-      <p>${lesson.content}</p>
-      <p class="muted small">Source: ${lesson.source}</p>
+      <div class="lesson-content__body">
+        <p>${lesson.content}</p>
+      </div>
+      <p class="lesson-content__source muted small">Source: ${lesson.source}</p>
     </section>
 
     <section class="panel lesson-view__actions">
@@ -56,9 +71,12 @@ export function render(container, params) {
     </section>
   `;
 
+  wireSpeakerControl(container, 'lesson-speaker', () => speechText);
+
   const markBtn = container.querySelector('#mark-complete-btn');
   markBtn.addEventListener('click', () => {
     markLessonComplete(lesson.id);
+    showToast(`"${lesson.title}" marked complete.`, { type: 'success', duration: 3000 });
     if (nextLesson) {
       navigate(`/lesson/${module.id}/${nextLesson.id}`);
     } else {
