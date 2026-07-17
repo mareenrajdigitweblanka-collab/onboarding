@@ -16,12 +16,21 @@
 import { getStaticTranslation, getTranslationStatus } from '../services/translation-service.js';
 import { TRANSLATION_STATUS, TRANSLATION_UNAVAILABLE_MESSAGE } from '../translations/translation-status.js';
 import { speakTamil, stopSpeech, isSpeechSupported, getTamilVoice } from '../services/speech-service.js';
+import { FEATURES } from '../config.js';
 
 /**
  * Renders the control shell. Never paints or looks anything up — purely
  * markup, mirroring speaker-control.js's render/wire split.
+ *
+ * Programme feature gate: when the active programme has
+ * `enableTamilTranslation: false` (e.g. the Amazon Team programme), this
+ * returns an empty string so NO Tamil control is rendered anywhere — no
+ * "Translate to Tamil"/"Show English"/"Read Tamil" buttons, and, because the
+ * control never mounts, wireTranslationControl below is a no-op and the
+ * translation service is never called. PH keeps its Tamil controls unchanged.
  */
 export function renderTranslationControl(idPrefix, label = 'Tamil translation for this content') {
+  if (!FEATURES.enableTamilTranslation) return '';
   return `
     <div class="translation-control" id="${idPrefix}" aria-label="${label}">
       <div class="translation-control__row">

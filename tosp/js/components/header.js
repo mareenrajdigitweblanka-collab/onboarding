@@ -5,7 +5,7 @@
 // touched here, so the cached reference to it in app.js never goes stale.
 
 import { PROJECT, DEMO_LEARNER, CONFIG } from '../config.js';
-import { MODULES } from '../data.js';
+import { getActiveProgramme, PROGRAMMES, setActiveProgramme } from '../programmes/registry.js';
 import { getOverallProgress, getCurrentModule, programmeIsComplete, resetAllProgress } from '../services/progress-service.js';
 import { progressBar } from './progress-bar.js';
 import { renderThemeToggle, wireThemeToggle } from './theme-toggle.js';
@@ -13,14 +13,25 @@ import { confirmDialog } from './confirm-dialog.js';
 import { showToast } from './toast.js';
 import { navigate } from '../router.js';
 
-const NAV_ITEMS = [
-  { key: 'dashboard', label: 'Dashboard', icon: '⌂', route: '/dashboard' },
-  { key: 'programme-evaluation', label: '7-Day Evaluation', icon: '①', route: '/programme/evaluation' },
-  { key: 'programme-ph', label: 'PH Competency Path', icon: '➤', route: '/programme/ph' },
-  { key: 'current-module', label: 'Current Module', icon: '▶', route: null }, // resolved dynamically
-  { key: 'sources', label: 'Programme Sources', icon: '☰', route: '/sources' },
-  { key: 'translation-review', label: 'Translation Review', icon: 'அ', route: '/translation-review' },
-];
+// Navigation items are supplied by the ACTIVE programme's UI descriptor
+// (programmes/*-programme.js), so PH-specific items (7-Day Evaluation, PH
+// Competency Path, Translation Review) never appear on the Amazon programme,
+// and vice versa. The shared shell itself hardcodes no programme content.
+
+function programmeSwitcherHtml(idSuffix) {
+  const active = getActiveProgramme();
+  const options = PROGRAMMES.map((p) =>
+    `<option value="${p.id}" ${p.id === active.id ? 'selected' : ''}>${p.shortTitle}</option>`
+  ).join('');
+  return `
+    <div class="programme-switcher">
+      <label class="programme-switcher__label" for="programme-switcher-${idSuffix}">Programme</label>
+      <select class="programme-switcher__select" id="programme-switcher-${idSuffix}" data-programme-switcher>
+        ${options}
+      </select>
+    </div>
+  `;
+}
 
 function currentModuleRoute() {
   const next = getCurrentModule();
@@ -31,8 +42,10 @@ function currentModuleRoute() {
 export function renderHeader(activeRoute) {
   const { overallPct, completedModuleCount, totalModules } = getOverallProgress();
   const curModRoute = currentModuleRoute();
+  const activeProgramme = getActiveProgramme();
+  const navItems = activeProgramme.ui.navItems;
 
-  const navHtml = (variant) => NAV_ITEMS.map((item) => {
+  const navHtml = (variant) => navItems.map((item) => {
     const route = item.route || curModRoute;
     const isActive = activeRoute === item.key;
     return `
@@ -73,6 +86,11 @@ export function renderHeader(activeRoute) {
           <span class="app-sidebar__code">${PROJECT.code}</span>
         </div>
         <button type="button" id="sidebar-close-btn" class="app-sidebar__close-btn" aria-label="Close navigation menu">✕</button>
+      </div>
+
+      <div class="app-sidebar__section app-sidebar__section--programme">
+        ${programmeSwitcherHtml('desktop')}
+        <p class="app-sidebar__programme-title muted small">${activeProgramme.shortTitle} — ${activeProgramme.team}</p>
       </div>
 
       <div class="app-sidebar__section">
@@ -158,6 +176,15 @@ export function wireHeader(shellRoot) {
     resetAllProgress();
     showToast('Demo progress has been reset.', { type: 'success' });
     navigate('/dashboard'); // Handles both "already on dashboard" (sync rerender) and other pages (async hashchange).
+  });
+
+  // Programme switcher — selecting a different programme reloads the app so the
+  // engine re-reads that programme's content/config/storage key. No-op if the
+  // same programme is chosen. Switching never touches any progress key.
+  shellRoot.querySelectorAll('[data-programme-switcher]').forEach((sel) => {
+    sel.addEventListener('change', (event) => {
+      setActiveProgramme(event.target.value);
+    });
   });
 
   return () => unsubscribers.forEach((fn) => fn && fn());
