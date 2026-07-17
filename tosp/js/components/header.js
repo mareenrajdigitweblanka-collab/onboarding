@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { key: 'programme-ph', label: 'PH Competency Path', icon: '➤', route: '/programme/ph' },
   { key: 'current-module', label: 'Current Module', icon: '▶', route: null }, // resolved dynamically
   { key: 'sources', label: 'Programme Sources', icon: '☰', route: '/sources' },
+  { key: 'translation-review', label: 'Translation Review', icon: 'அ', route: '/translation-review' },
 ];
 
 function currentModuleRoute() {

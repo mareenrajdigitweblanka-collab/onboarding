@@ -4,6 +4,9 @@
 import { MODULES, LESSONS } from '../data.js';
 import { getProgress, canOpenModule, markLessonComplete } from '../services/progress-service.js';
 import { renderSpeakerControl, wireSpeakerControl } from '../components/speaker-control.js';
+import { renderTranslationControl, wireTranslationControl } from '../components/translation-control.js';
+import { lessonTitleContentId, lessonParagraphContentId } from '../services/translation-service.js';
+import { stopSpeech } from '../services/speech-service.js';
 import { showToast } from '../components/toast.js';
 import { rerender, navigate } from '../router.js';
 
@@ -46,16 +49,18 @@ export function render(container, params) {
 
     <section class="panel">
       <div class="panel__header-row">
-        <h1>${lesson.title}</h1>
+        <h1 id="lesson-title-text">${lesson.title}</h1>
         <button type="button" class="btn btn--ghost" data-nav="/module/${module.id}">Back to Module</button>
       </div>
+      ${renderTranslationControl('lesson-title-translate', 'Tamil translation for this lesson title')}
       <p class="muted">${module.title} · Lesson ${index + 1} of ${moduleLessons.length} · <span aria-hidden="true">⏱</span> ${lesson.estimatedMinutes} min</p>
       ${renderSpeakerControl('lesson-speaker', 'Listen to this lesson')}
     </section>
 
     <section class="panel lesson-content">
       <div class="lesson-content__body">
-        <p>${lesson.content}</p>
+        <p id="lesson-paragraph-text">${lesson.content}</p>
+        ${renderTranslationControl('lesson-translate', 'Tamil translation for this lesson paragraph')}
       </div>
       <p class="lesson-content__source muted small">Source: ${lesson.source}</p>
     </section>
@@ -71,7 +76,49 @@ export function render(container, params) {
     </section>
   `;
 
-  wireSpeakerControl(container, 'lesson-speaker', () => speechText);
+  let titleLanguage = 'en';
+  let paragraphLanguage = 'en';
+  wireSpeakerControl(container, 'lesson-speaker', () => {
+    if (titleLanguage === 'ta' || paragraphLanguage === 'ta') {
+      showToast('Switch back to English (Show English) to use Read Aloud, or use each block’s own Read Tamil button.', { type: 'info', duration: 5000 });
+      return '';
+    }
+    return speechText;
+  });
+
+  wireTranslationControl(container, 'lesson-title-translate', [
+    {
+      contentId: lessonTitleContentId(lesson.id),
+      sourceText: lesson.title,
+      setText: (text, lang) => {
+        const el = container.querySelector('#lesson-title-text');
+        el.textContent = text;
+        el.lang = lang;
+      },
+    },
+  ], {
+    onLanguageChange: (lang) => {
+      titleLanguage = lang;
+      stopSpeech();
+    },
+  });
+
+  wireTranslationControl(container, 'lesson-translate', [
+    {
+      contentId: lessonParagraphContentId(lesson.id),
+      sourceText: lesson.content,
+      setText: (text, lang) => {
+        const el = container.querySelector('#lesson-paragraph-text');
+        el.textContent = text;
+        el.lang = lang;
+      },
+    },
+  ], {
+    onLanguageChange: (lang) => {
+      paragraphLanguage = lang;
+      stopSpeech();
+    },
+  });
 
   const markBtn = container.querySelector('#mark-complete-btn');
   markBtn.addEventListener('click', () => {

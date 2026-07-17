@@ -52,9 +52,14 @@ export function speakText(text, options = {}) {
 
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.rate = options.rate || 1;
+  if (options.lang) {
+    utterance.lang = options.lang;
+  }
   if (options.voiceName) {
     const voice = getAvailableVoices().find((v) => v.name === options.voiceName);
     if (voice) utterance.voice = voice;
+  } else if (options.voice) {
+    utterance.voice = options.voice;
   }
   utterance.onstart = () => setState('reading');
   utterance.onend = () => {
@@ -69,6 +74,51 @@ export function speakText(text, options = {}) {
   currentUtterance = utterance;
   window.speechSynthesis.speak(utterance);
   return true;
+}
+
+// ---------------------------------------------------------------------------
+// Tamil text-to-speech — built on the same speakText()/speechSynthesis
+// primitives above, never a parallel speech mechanism. Voice preference:
+// an installed ta-LK voice, then ta-IN, then the browser's default voice
+// (still tagged with a ta-* lang so a Tamil-capable browser voice picks
+// correct pronunciation even without an exact regional match).
+// ---------------------------------------------------------------------------
+
+const TAMIL_LANG_PREFERENCE = ['ta-LK', 'ta-IN'];
+
+/**
+ * Returns the best available installed Tamil voice, preferring ta-LK, then
+ * ta-IN, then any voice whose lang starts with "ta". Returns null if no
+ * Tamil voice is installed in this browser — callers must handle that
+ * (see components/translation-control.js) rather than assume one exists.
+ */
+export function getTamilVoice() {
+  if (!isSpeechSupported()) return null;
+  const voices = getAvailableVoices();
+  for (const lang of TAMIL_LANG_PREFERENCE) {
+    const exact = voices.find((v) => v.lang === lang);
+    if (exact) return exact;
+  }
+  return voices.find((v) => v.lang && v.lang.toLowerCase().startsWith('ta')) || null;
+}
+
+/**
+ * Speaks Tamil text using the best available Tamil voice, falling back to
+ * the browser's default voice tagged with ta-LK (many engines can still
+ * attempt correct pronunciation from the lang tag alone). Always stops any
+ * speech in progress first (via speakText -> stopSpeech), so a Tamil
+ * playback can never overlap a previous English (or Tamil) utterance.
+ * Returns false if speech isn't supported or the text is empty — it never
+ * throws and never silently speaks English text instead.
+ */
+export function speakTamil(text, options = {}) {
+  if (!isSpeechSupported() || !text || !text.trim()) return false;
+  const voice = getTamilVoice();
+  return speakText(text, {
+    rate: options.rate || 1,
+    lang: voice ? voice.lang : TAMIL_LANG_PREFERENCE[0],
+    voice: voice || undefined,
+  });
 }
 
 export function pauseSpeech() {

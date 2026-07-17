@@ -620,6 +620,7 @@ code {
   transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn[hidden] { display: none; }
 
 .btn--primary { background: var(--color-primary); color: #fff; }
 .btn--primary:hover:not(:disabled) { background: var(--color-primary-hover); }
@@ -930,4 +931,68 @@ code {
 
 @media (min-width: 768px) and (max-width: 1023px) {
   .module-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---------------------------------------------------------------------
+   Tamil typography — system font stack only, no external font loads.
+   --------------------------------------------------------------------- */
+
+[lang="ta"] {
+  font-family: "Noto Sans Tamil", "Nirmala UI", "Tamil Sangam MN", "Tamil MN", "Vijaya", var(--font-family);
+}
+
+/* ---------------------------------------------------------------------
+   Buttons — small variant (translation controls, review-panel actions)
+   --------------------------------------------------------------------- */
+
+.btn--small { padding: var(--space-1) var(--space-3); min-height: 36px; font-size: var(--font-size-xs); }
+
+/* ---------------------------------------------------------------------
+   Translation control (Tamil translation per lesson paragraph / module
+   summary / quiz question)
+   --------------------------------------------------------------------- */
+
+.translation-control { margin-top: var(--space-3); }
+.translation-control__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.translation-control__message {
+  margin: var(--space-1) 0 0;
+  min-height: 1.2em; /* Reserves space so loading/unavailable text doesn't shift layout when it appears. */
+}
+.translation-control__message-en { display: block; margin-top: 2px; }
+
+.quiz-question .translation-control { border-top: 1px solid var(--color-border); padding-top: var(--space-3); }
+
+/* ---------------------------------------------------------------------
+   Translation review panel (PROTOTYPE_APPROVAL_ONLY)
+   --------------------------------------------------------------------- */
+
+.translation-review-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-4); }
+.translation-review-row {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.translation-review-row--approved { border-color: var(--color-success); }
+.translation-review-row__id { font-family: monospace; word-break: break-all; }
+.translation-review-row__pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+.translation-review-row__label { margin: 0; text-transform: uppercase; letter-spacing: 0.04em; }
+.translation-review-row__text { margin: var(--space-1) 0; }
+.translation-review-row__text--ta { font-size: var(--font-size-lg); }
+.translation-review-row__meta { margin: 0; }
+
+@media (max-width: 767px) {
+  .translation-review-row__pair { grid-template-columns: 1fr; }
+  .translation-control__row { align-items: flex-start; }
 }

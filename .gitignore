@@ -1,0 +1,10 @@
+# Never commit real secrets — only .env.example is tracked.
+.env
+.env.local
+.env.*.local
+
+# Vercel CLI local project/link metadata.
+.vercel
+
+# Node dependency output, in case anything is ever installed at the root.
+node_modules/

@@ -17,6 +17,7 @@ import * as moduleView from './views/module-view.js';
 import * as lessonView from './views/lesson-view.js';
 import * as quizView from './views/quiz-view.js';
 import * as completionView from './views/completion-view.js';
+import * as translationReviewView from './views/translation-review-view.js';
 
 const shellNavEl = document.getElementById('app-shell-nav');
 const mainEl = document.getElementById('app-main');
@@ -47,6 +48,7 @@ registerRoute('/module/:moduleId', (params) => mount('module', moduleView.render
 registerRoute('/lesson/:moduleId/:lessonId', (params) => mount('lesson', lessonView.render, params));
 registerRoute('/quiz/:moduleId', (params) => mount('quiz', quizView.render, params));
 registerRoute('/completion', () => mount('completion', completionView.render));
+registerRoute('/translation-review', () => mount('translation-review', translationReviewView.render));
 registerNotFound(() => mount('dashboard', dashboardView.render));
 
 // Single delegated handler for every [data-nav] button rendered by any

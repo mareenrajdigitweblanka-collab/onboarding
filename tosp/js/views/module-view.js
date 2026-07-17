@@ -16,6 +16,14 @@ import { getAttempts, isQuizPassed, canAttemptQuiz } from '../services/quiz-serv
 import { statusBadge } from '../components/status-badge.js';
 import { progressBar } from '../components/progress-bar.js';
 import { renderSpeakerControl, wireSpeakerControl } from '../components/speaker-control.js';
+import { renderTranslationControl, wireTranslationControl } from '../components/translation-control.js';
+import {
+  moduleTitleContentId,
+  moduleSummaryContentId,
+  moduleRealWorldPaceContentId,
+  moduleSignoffExplanationContentId,
+} from '../services/translation-service.js';
+import { stopSpeech } from '../services/speech-service.js';
 import { confirmDialog } from '../components/confirm-dialog.js';
 import { showToast } from '../components/toast.js';
 import { rerender } from '../router.js';
@@ -81,16 +89,17 @@ export function render(container, params) {
     quizStatusHtml = `${statusBadge('available')} <p class="muted">Attempts used: ${attempts.length} / ${CONFIG.maxAttempts}</p>`;
   }
 
+  const SIGNOFF_EXPLANATION_TEXT =
+    'The PH/Sales BGCT Handbook requires each learning step to be verified by team leader ' +
+    'sign-off before progression (Source: PH/Sales BGCT Handbook v1.0 — Section 1, Checklist). ' +
+    'Confirming below is a simulated, self-service prototype action — it is not performed or ' +
+    'verified by an actual team leader, and it is not official evidence of readiness.';
+
   const signoffSectionHtml = requiresSignoff ? `
     <section class="panel signoff-panel">
       <h2>Team Leader Sign-off <span class="badge badge--demo">SIMULATED · PROTOTYPE_ONLY</span></h2>
-      <p class="muted small">
-        The PH/Sales BGCT Handbook requires each learning step to be verified by team leader
-        sign-off before progression (Source: PH/Sales BGCT Handbook v1.0 — Section 1, Checklist).
-        Confirming below is a <strong>simulated, self-service prototype action</strong> — it is
-        not performed or verified by an actual team leader, and it is not official evidence of
-        readiness.
-      </p>
+      <p class="muted small" id="module-signoff-text">${SIGNOFF_EXPLANATION_TEXT}</p>
+      ${renderTranslationControl('module-signoff-translate', 'Tamil translation for the sign-off explanation')}
       ${signedOff
         ? `${statusBadge('passed')} <p class="muted">Signed off (simulated).</p>`
         : passed
@@ -112,11 +121,17 @@ export function render(container, params) {
 
     <section class="panel">
       <div class="panel__header-row">
-        <h1>${module.title}</h1>
+        <h1 id="module-title-text">${module.title}</h1>
         <button type="button" class="btn btn--ghost" data-nav="${tier.route}">Back to Programme</button>
       </div>
-      <p class="muted">${module.summary}</p>
-      <p class="muted small">Source: ${module.source}${module.realWorldPace ? ` · Real-world pace: ${module.realWorldPace}` : ''}</p>
+      ${renderTranslationControl('module-title-translate', 'Tamil translation for this module title')}
+      <p class="muted" id="module-summary-text">${module.summary}</p>
+      ${renderTranslationControl('module-translate', 'Tamil translation for this module summary')}
+      <p class="muted small">Source: ${module.source}</p>
+      ${module.realWorldPace ? `
+        <p class="muted small">Real-world pace: <span id="module-pace-text">${module.realWorldPace}</span></p>
+        ${renderTranslationControl('module-pace-translate', 'Tamil translation for the real-world pace')}
+      ` : ''}
       ${renderSpeakerControl('module-speaker', 'Listen to the module summary')}
       ${progressBar(mp.progressPct, 'Module progress')}
     </section>
@@ -139,7 +154,77 @@ export function render(container, params) {
     ${signoffSectionHtml}
   `;
 
-  wireSpeakerControl(container, 'module-speaker', () => speechText);
+  let titleLanguage = 'en';
+  let summaryLanguage = 'en';
+  wireSpeakerControl(container, 'module-speaker', () => {
+    if (titleLanguage === 'ta' || summaryLanguage === 'ta') {
+      showToast('Switch back to English (Show English) to use Read Aloud, or use each block’s own Read Tamil button.', { type: 'info', duration: 5000 });
+      return '';
+    }
+    return speechText;
+  });
+
+  wireTranslationControl(container, 'module-title-translate', [
+    {
+      contentId: moduleTitleContentId(module.id),
+      sourceText: module.title,
+      setText: (text, lang) => {
+        const el = container.querySelector('#module-title-text');
+        el.textContent = text;
+        el.lang = lang;
+      },
+    },
+  ], {
+    onLanguageChange: (lang) => {
+      titleLanguage = lang;
+      stopSpeech();
+    },
+  });
+
+  wireTranslationControl(container, 'module-translate', [
+    {
+      contentId: moduleSummaryContentId(module.id),
+      sourceText: module.summary,
+      setText: (text, lang) => {
+        const el = container.querySelector('#module-summary-text');
+        el.textContent = text;
+        el.lang = lang;
+      },
+    },
+  ], {
+    onLanguageChange: (lang) => {
+      summaryLanguage = lang;
+      stopSpeech();
+    },
+  });
+
+  if (module.realWorldPace) {
+    wireTranslationControl(container, 'module-pace-translate', [
+      {
+        contentId: moduleRealWorldPaceContentId(module.id),
+        sourceText: module.realWorldPace,
+        setText: (text, lang) => {
+          const el = container.querySelector('#module-pace-text');
+          el.textContent = text;
+          el.lang = lang;
+        },
+      },
+    ]);
+  }
+
+  if (requiresSignoff) {
+    wireTranslationControl(container, 'module-signoff-translate', [
+      {
+        contentId: moduleSignoffExplanationContentId(),
+        sourceText: SIGNOFF_EXPLANATION_TEXT,
+        setText: (text, lang) => {
+          const el = container.querySelector('#module-signoff-text');
+          el.textContent = text;
+          el.lang = lang;
+        },
+      },
+    ]);
+  }
 
   if (canSignoff) {
     const signoffBtn = container.querySelector('#confirm-signoff-btn');

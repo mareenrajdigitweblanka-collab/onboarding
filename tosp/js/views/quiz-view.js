@@ -22,7 +22,18 @@ import {
 } from '../state.js';
 import { statusBadge } from '../components/status-badge.js';
 import { renderSpeakerControl, wireSpeakerControl } from '../components/speaker-control.js';
+import { renderTranslationControl, wireTranslationControl } from '../components/translation-control.js';
+import {
+  quizTitleContentId,
+  quizInstructionsTemplateContentId,
+  quizQuestionContentId,
+  quizOptionContentId,
+} from '../services/translation-service.js';
+
+const QUIZ_INSTRUCTIONS_TEMPLATE_EN = 'This Skill Check has {count} questions. Select one answer per question, then submit.';
+import { stopSpeech } from '../services/speech-service.js';
 import { confirmDialog } from '../components/confirm-dialog.js';
+import { showToast } from '../components/toast.js';
 import { rerender, navigate } from '../router.js';
 
 function renderBlocked(container, module, message) {
@@ -147,6 +158,7 @@ export function render(container, params) {
   const attemptNumber = attempts.length + 1;
   const questions = QUESTIONS.filter((q) => q.quizId === quiz.id);
   const draft = getDraftAnswers(quiz.id);
+  const quizInstructionsText = QUIZ_INSTRUCTIONS_TEMPLATE_EN.replace('{count}', String(questions.length));
 
   const speechText = [
     `${quiz.title}. This Skill Check has ${questions.length} questions. Select one answer per question, then submit.`,
@@ -160,14 +172,15 @@ export function render(container, params) {
     const optionsHtml = q.options.map((opt) => `
       <label class="quiz-option">
         <input type="radio" name="${q.id}" value="${opt.id}" ${draft[q.id] === opt.id ? 'checked' : ''} />
-        <span>${opt.text}</span>
+        <span id="quiz-opt-text-${q.id}-${opt.id}">${opt.text}</span>
       </label>
     `).join('');
 
     return `
       <fieldset class="quiz-question" data-question-id="${q.id}">
-        <legend>${i + 1}. ${q.prompt}</legend>
+        <legend><span aria-hidden="true">${i + 1}.</span> <span id="quiz-prompt-text-${q.id}">${q.prompt}</span></legend>
         <div class="quiz-options">${optionsHtml}</div>
+        ${renderTranslationControl(`quiz-translate-${q.id}`, `Tamil translation for question ${i + 1}`)}
       </fieldset>
     `;
   }).join('');
@@ -183,9 +196,12 @@ export function render(container, params) {
 
     <section class="panel">
       <div class="panel__header-row">
-        <h1>${quiz.title}</h1>
+        <h1 id="quiz-title-text">${quiz.title}</h1>
         <button type="button" class="btn btn--ghost" data-nav="/module/${module.id}">Back to Module</button>
       </div>
+      ${renderTranslationControl('quiz-title-translate', 'Tamil translation for this Skill Check title')}
+      <p class="muted" id="quiz-instructions-text">${quizInstructionsText}</p>
+      ${renderTranslationControl('quiz-instructions-translate', 'Tamil translation for the Skill Check instructions')}
       <p class="muted">Attempt ${attemptNumber} of ${CONFIG.maxAttempts} · Passing score ${quiz.passingScorePct}%</p>
       <p class="muted" id="quiz-progress-indicator" role="status" aria-live="polite">0 of ${questions.length} questions answered</p>
       ${renderSpeakerControl('quiz-speaker', 'Listen to the questions and options')}
@@ -200,7 +216,79 @@ export function render(container, params) {
     </section>
   `;
 
-  wireSpeakerControl(container, 'quiz-speaker', () => speechText);
+  const tamilDisplayedQuestionIds = new Set();
+  let quizTitleLanguage = 'en';
+  let quizInstructionsLanguage = 'en';
+  wireSpeakerControl(container, 'quiz-speaker', () => {
+    if (tamilDisplayedQuestionIds.size > 0 || quizTitleLanguage === 'ta' || quizInstructionsLanguage === 'ta') {
+      showToast('Switch every translated block back to English (Show English) to use this Read Aloud control, or use each block’s own Read Tamil button.', { type: 'info', duration: 5000 });
+      return '';
+    }
+    return speechText;
+  });
+
+  wireTranslationControl(container, 'quiz-title-translate', [
+    {
+      contentId: quizTitleContentId(quiz.id),
+      sourceText: quiz.title,
+      setText: (text, lang) => {
+        const el = container.querySelector('#quiz-title-text');
+        el.textContent = text;
+        el.lang = lang;
+      },
+    },
+  ], {
+    onLanguageChange: (lang) => {
+      quizTitleLanguage = lang;
+      stopSpeech();
+    },
+  });
+
+  wireTranslationControl(container, 'quiz-instructions-translate', [
+    {
+      contentId: quizInstructionsTemplateContentId(),
+      sourceText: QUIZ_INSTRUCTIONS_TEMPLATE_EN,
+      setText: (text, lang) => {
+        const el = container.querySelector('#quiz-instructions-text');
+        el.textContent = text.replace('{count}', String(questions.length));
+        el.lang = lang;
+      },
+    },
+  ], {
+    onLanguageChange: (lang) => {
+      quizInstructionsLanguage = lang;
+      stopSpeech();
+    },
+  });
+
+  questions.forEach((q) => {
+    wireTranslationControl(container, `quiz-translate-${q.id}`, [
+      {
+        contentId: quizQuestionContentId(q.id),
+        sourceText: q.prompt,
+        setText: (text, lang) => {
+          const el = container.querySelector(`#quiz-prompt-text-${q.id}`);
+          el.textContent = text;
+          el.lang = lang;
+        },
+      },
+      ...q.options.map((opt) => ({
+        contentId: quizOptionContentId(q.id, opt.id),
+        sourceText: opt.text,
+        setText: (text, lang) => {
+          const el = container.querySelector(`#quiz-opt-text-${q.id}-${opt.id}`);
+          el.textContent = text;
+          el.lang = lang;
+        },
+      })),
+    ], {
+      onLanguageChange: (lang) => {
+        if (lang === 'ta') tamilDisplayedQuestionIds.add(q.id);
+        else tamilDisplayedQuestionIds.delete(q.id);
+        stopSpeech();
+      },
+    });
+  });
 
   const form = container.querySelector('#quiz-form');
   const errorEl = container.querySelector('#quiz-validation-error');

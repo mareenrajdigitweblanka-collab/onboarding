@@ -1,0 +1,12 @@
+{
+  "name": "tosp-translation-proxy",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Minimal Vercel serverless function boundary for TOSP's Tamil translation proxy (api/translate.js). The learner-facing app itself is the static site in tosp/ — this file exists only so Vercel recognizes api/ as serverless functions and so the required Node.js runtime is documented.",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "vercel dev"
+  }
+}
