@@ -137,6 +137,16 @@ export function render(container) {
       <div class="module-grid">${moduleCardsHtml}</div>
     </section>
 
+    ${ui.practicalTask ? `
+    <section class="panel">
+      <div class="panel__header-row">
+        <h2>Final Practical Task</h2>
+        <button type="button" class="btn btn--ghost" data-nav="${ui.practicalTask.route}">${ui.practicalTask.label}</button>
+      </div>
+      <p class="muted small">${ui.practicalTask.availabilityNote}</p>
+    </section>
+    ` : ''}
+
     <section class="panel source-summary">
       <div class="panel__header-row">
         <h2>Programme Source Reference</h2>
