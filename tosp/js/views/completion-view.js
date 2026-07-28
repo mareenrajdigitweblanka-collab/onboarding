@@ -2,6 +2,7 @@
 
 import { PROGRAMME } from '../data.js';
 import { CONFIG, PROTOTYPE_WARNING, DEMO_LEARNER } from '../config.js';
+import { getActiveProgramme } from '../programmes/registry.js';
 import { getProgress, getOverallProgress, programmeIsComplete, resetAllProgress } from '../services/progress-service.js';
 import { confirmDialog } from '../components/confirm-dialog.js';
 import { showToast } from '../components/toast.js';
@@ -19,6 +20,7 @@ export function render(container) {
     return;
   }
 
+  const activeProgramme = getActiveProgramme();
   const progress = getProgress();
   const overall = getOverallProgress();
   const completedDate = progress.completedAt
@@ -34,12 +36,14 @@ export function render(container) {
       <h1><span aria-hidden="true">🎉</span> Congratulations, ${DEMO_LEARNER.displayName}!</h1>
       <p class="muted">You have completed the ${PROGRAMME.title}.</p>
       <dl class="summary-grid">
+        <div><dt>Team</dt><dd>${activeProgramme.team}</dd></div>
         <div><dt>Programme</dt><dd>${PROGRAMME.title}</dd></div>
         <div><dt>Version</dt><dd>${PROGRAMME.version}</dd></div>
         <div><dt>Completion date</dt><dd>${completedDate}</dd></div>
         <div><dt>Modules completed</dt><dd>${overall.completedModuleCount} / ${overall.totalModules}</dd></div>
+        <div><dt>Status</dt><dd><span class="badge badge--demo">PROTOTYPE_ONLY</span></dd></div>
       </dl>
-      <p class="muted small">This completion summary, including all quiz results and Team Leader Sign-offs above, is generated and stored entirely in this browser (PROTOTYPE_ONLY) and is not official onboarding evidence.</p>
+      <p class="muted small">This completion summary is generated and stored entirely in this browser (PROTOTYPE_ONLY) and is <strong>not</strong> an official employment, onboarding, or competency certificate.</p>
     </section>
 
     <section class="panel danger-zone">

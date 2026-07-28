@@ -1,15 +1,21 @@
 // views/dashboard-view.js — landing screen: welcome, progress at a glance,
-// readiness statuses, recommended next action, and a condensed source panel.
+// per-track progress, (programme-defined) readiness statuses, recommended next
+// action, and a condensed source panel.
+//
+// Programme-agnostic: the per-track stat cards, readiness rows, and source
+// blurb all come from the ACTIVE programme's UI descriptor, so PH-specific
+// items (7-Day Evaluation, PH Competency Path, ASIN readiness) never appear on
+// the Amazon programme, which supplies its own tracks and an empty readiness
+// list instead.
 
 import { PROGRAMME, MODULES, LESSONS, QUIZZES } from '../data.js';
 import { PROTOTYPE_WARNING, DEMO_LEARNER } from '../config.js';
+import { getActiveProgramme } from '../programmes/registry.js';
 import {
   getProgress,
   getOverallProgress,
   getModuleStatus,
   getPreviousModule,
-  getAsinAllocationReadiness,
-  getIndependentOwnershipReadiness,
   getMostRecentlyCompletedModule,
   getActivitySummary,
   isSignedOff,
@@ -19,9 +25,6 @@ import { calculateOverallProgress, calculateModuleProgress } from '../rules/prog
 import { getAttempts } from '../services/quiz-service.js';
 import { moduleCard } from '../components/module-card.js';
 import { statusBadge } from '../components/status-badge.js';
-
-const EVALUATION_MODULES = MODULES.filter((m) => m.orderIndex <= 7);
-const PH_MODULES = MODULES.filter((m) => m.orderIndex > 7);
 
 function readinessRow(label, ready, note) {
   return `
@@ -37,15 +40,33 @@ function readinessRow(label, ready, note) {
 }
 
 export function render(container) {
+  const ui = getActiveProgramme().ui;
   const progress = getProgress();
   const overall = getOverallProgress();
-  const evaluationProgress = calculateOverallProgress(EVALUATION_MODULES, LESSONS, QUIZZES, progress);
-  const phProgress = calculateOverallProgress(PH_MODULES, LESSONS, QUIZZES, progress);
   const nextModule = determineNextModule(MODULES, progress);
-  const asinReady = getAsinAllocationReadiness();
-  const ownershipReady = getIndependentOwnershipReadiness();
   const recentModule = getMostRecentlyCompletedModule();
   const activity = getActivitySummary();
+
+  // One stat card per programme-defined track, computed from its module filter.
+  const trackStatsHtml = ui.tracks.map((track) => {
+    const trackModules = MODULES.filter(track.filter);
+    const tp = calculateOverallProgress(trackModules, LESSONS, QUIZZES, progress);
+    return `
+      <div class="panel stat-card">
+        <h2>${track.statLabel}</h2>
+        <p class="stat-card__value">${tp.overallPct}%</p>
+        <p class="muted small">${tp.completedModuleCount} of ${tp.totalModules} ${track.unitNoun} complete</p>
+      </div>
+    `;
+  }).join('');
+
+  // Readiness section only renders when the programme defines readiness rows.
+  const readinessHtml = ui.readiness.length > 0
+    ? `<div class="panel">
+        <h2>Readiness Status</h2>
+        ${ui.readiness.map((r) => readinessRow(r.label, r.evaluate(MODULES, progress), r.note)).join('')}
+      </div>`
+    : '';
 
   const moduleCardsHtml = MODULES.map((module) => {
     const status = getModuleStatus(module.id);
@@ -83,16 +104,7 @@ export function render(container) {
         <p class="stat-card__value">${overall.overallPct}%</p>
         <p class="muted small">${overall.completedModuleCount} of ${overall.totalModules} modules complete</p>
       </div>
-      <div class="panel stat-card">
-        <h2>7-Day Evaluation</h2>
-        <p class="stat-card__value">${evaluationProgress.overallPct}%</p>
-        <p class="muted small">${evaluationProgress.completedModuleCount} of ${evaluationProgress.totalModules} days complete</p>
-      </div>
-      <div class="panel stat-card">
-        <h2>PH Competency Path</h2>
-        <p class="stat-card__value">${phProgress.overallPct}%</p>
-        <p class="muted small">${phProgress.completedModuleCount} of ${phProgress.totalModules} steps complete</p>
-      </div>
+      ${trackStatsHtml}
     </section>
 
     <section class="panel recommended-action">
@@ -105,11 +117,7 @@ export function render(container) {
     </section>
 
     <section class="panel-grid">
-      <div class="panel">
-        <h2>Readiness Status</h2>
-        ${readinessRow('ASIN Allocation Readiness', asinReady, 'PH Learning Path Steps 1–6 fully complete — the minimum before ASIN ownership can be assigned (Source: PH/Sales BGCT Handbook v1.0 — Section 1).')}
-        ${readinessRow('Independent Ownership Readiness', ownershipReady, 'All 11 PH Learning Path steps fully complete, in order (Source: PH/Sales BGCT Handbook v1.0 — Section 1, Best Practice).')}
-      </div>
+      ${readinessHtml}
       <div class="panel">
         <h2>Activity Summary</h2>
         <dl class="summary-grid">
@@ -134,11 +142,7 @@ export function render(container) {
         <h2>Programme Source Reference</h2>
         <button type="button" class="btn btn--ghost" data-nav="/sources">View Full Source Reference</button>
       </div>
-      <p class="muted small">
-        Content is sourced from the Digitweb Lanka New Employee Onboarding Guide v1.0 and the
-        PH/Sales BGCT Handbook v1.0 (status FINAL_TRUTH). Progress and sign-offs recorded here
-        remain PROTOTYPE_ONLY.
-      </p>
+      <p class="muted small">${ui.dashboardSourceBlurb}</p>
     </section>
   `;
 }

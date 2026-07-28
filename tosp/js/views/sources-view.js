@@ -1,6 +1,10 @@
-// views/sources-view.js — full programme source-reference: the two
-// authoritative documents, key progression rules, and the source
-// documents' own scoring tables, each with a citation.
+// views/sources-view.js — full programme source-reference: the authoritative
+// documents, key progression rules, and (where the programme defines them) the
+// source documents' own scoring tables, each with a citation.
+//
+// The score-band / probation-gate tables are PH-specific: the Amazon programme
+// supplies empty arrays for them, so those sections simply do not render. The
+// intro text comes from the active programme's UI descriptor.
 
 import {
   SOURCE_DOCUMENTS,
@@ -10,44 +14,12 @@ import {
   PROBATION_SCORE_GATES,
   PROBATION_SCORE_GATES_SOURCE,
 } from '../data.js';
+import { getActiveProgramme } from '../programmes/registry.js';
 
 export function render(container) {
-  container.innerHTML = `
-    <div class="breadcrumb">
-      <button type="button" class="breadcrumb__link" data-nav="/dashboard">Dashboard</button>
-      <span class="breadcrumb__sep" aria-hidden="true">/</span>
-      <span class="breadcrumb__current">Programme Sources</span>
-    </div>
+  const ui = getActiveProgramme().ui;
 
-    <section class="panel">
-      <h1>Programme &amp; Source Reference</h1>
-      <p class="muted">
-        All programme content — modules, lessons, and Skill Check questions — is sourced directly
-        from the two documents below and is status <strong>FINAL_TRUTH</strong>. Progress, quiz
-        results, and Team Leader Sign-offs recorded in this browser remain
-        <strong>PROTOTYPE_ONLY</strong> and are not official onboarding evidence.
-      </p>
-    </section>
-
-    <section class="panel">
-      <h2>Source Documents</h2>
-      <ul class="reference-list">
-        ${SOURCE_DOCUMENTS.map((d) => `
-          <li>
-            <strong>${d.title}</strong> — ${d.version}, effective ${d.effectiveDate}.
-            <span class="muted small">${d.confidentiality}</span>
-          </li>
-        `).join('')}
-      </ul>
-    </section>
-
-    <section class="panel">
-      <h2>Key Progression Rules</h2>
-      <ul class="reference-list">
-        ${PROGRESSION_RULES.map((r) => `<li>${r.rule} <span class="muted small">— Source: ${r.source}</span></li>`).join('')}
-      </ul>
-    </section>
-
+  const scoreBandsHtml = EVALUATION_SCORE_BANDS.length > 0 ? `
     <section class="panel">
       <h2>Day 7 Evaluation Score Interpretation</h2>
       <p class="muted small">Source: ${EVALUATION_SCORE_BANDS_SOURCE}</p>
@@ -60,7 +32,9 @@ export function render(container) {
         </table>
       </div>
     </section>
+  ` : '';
 
+  const probationGatesHtml = PROBATION_SCORE_GATES.length > 0 ? `
     <section class="panel">
       <h2>Probation Progression Score Gates</h2>
       <p class="muted small">Source: ${PROBATION_SCORE_GATES_SOURCE}</p>
@@ -78,5 +52,40 @@ export function render(container) {
         unsourced prototype default (see README.md) — it does not come from this table.
       </p>
     </section>
+  ` : '';
+
+  container.innerHTML = `
+    <div class="breadcrumb">
+      <button type="button" class="breadcrumb__link" data-nav="/dashboard">Dashboard</button>
+      <span class="breadcrumb__sep" aria-hidden="true">/</span>
+      <span class="breadcrumb__current">Programme Sources</span>
+    </div>
+
+    <section class="panel">
+      <h1>Programme &amp; Source Reference</h1>
+      <p class="muted">${ui.sourcesIntro}</p>
+    </section>
+
+    <section class="panel">
+      <h2>Source Documents</h2>
+      <ul class="reference-list">
+        ${SOURCE_DOCUMENTS.map((d) => `
+          <li>
+            <strong>${d.title}</strong>${d.version && d.version !== '—' ? ` — ${d.version}` : ''}${d.effectiveDate && d.effectiveDate !== '—' ? `, effective ${d.effectiveDate}` : ''}.
+            <span class="muted small">${d.confidentiality}</span>
+          </li>
+        `).join('')}
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>Key Progression Rules</h2>
+      <ul class="reference-list">
+        ${PROGRESSION_RULES.map((r) => `<li>${r.rule} <span class="muted small">— Source: ${r.source}</span></li>`).join('')}
+      </ul>
+    </section>
+
+    ${scoreBandsHtml}
+    ${probationGatesHtml}
   `;
 }

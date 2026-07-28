@@ -996,3 +996,38 @@ code {
   .translation-review-row__pair { grid-template-columns: 1fr; }
   .translation-control__row { align-items: flex-start; }
 }
+
+/* Programme switcher (header sidebar) — lets the learner load a different
+   onboarding programme. Selecting one reloads the app with that programme. */
+.app-sidebar__section--programme {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.programme-switcher {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.programme-switcher__label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.programme-switcher__select {
+  width: 100%;
+  max-width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+.programme-switcher__select:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.app-sidebar__programme-title { margin: 0; }

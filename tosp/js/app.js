@@ -9,6 +9,7 @@ import { clearThemeListeners } from './services/theme-service.js';
 import { wasLastLoadCorrupted } from './storage.js';
 import { getProgress } from './services/progress-service.js';
 import { showToast } from './components/toast.js';
+import { FEATURES } from './config.js';
 
 import * as dashboardView from './views/dashboard-view.js';
 import * as programmeView from './views/programme-view.js';
@@ -48,7 +49,16 @@ registerRoute('/module/:moduleId', (params) => mount('module', moduleView.render
 registerRoute('/lesson/:moduleId/:lessonId', (params) => mount('lesson', lessonView.render, params));
 registerRoute('/quiz/:moduleId', (params) => mount('quiz', quizView.render, params));
 registerRoute('/completion', () => mount('completion', completionView.render));
-registerRoute('/translation-review', () => mount('translation-review', translationReviewView.render));
+// Tamil translation review is a PH-only screen. When the active programme has
+// Tamil disabled (e.g. Amazon Team), this route redirects to the dashboard so
+// the Tamil review screen is never shown for it.
+registerRoute('/translation-review', () => {
+  if (!FEATURES.enableTamilTranslation) {
+    navigate('/dashboard');
+    return;
+  }
+  mount('translation-review', translationReviewView.render);
+});
 registerNotFound(() => mount('dashboard', dashboardView.render));
 
 // Single delegated handler for every [data-nav] button rendered by any

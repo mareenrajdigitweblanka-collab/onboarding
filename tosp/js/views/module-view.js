@@ -3,6 +3,7 @@
 
 import { MODULES, LESSONS, QUIZZES } from '../data.js';
 import { CONFIG } from '../config.js';
+import { getActiveProgramme } from '../programmes/registry.js';
 import {
   getProgress,
   canOpenModule,
@@ -62,7 +63,9 @@ export function render(container, params) {
   const signedOff = requiresSignoff && isSignedOff(module.id);
   const canSignoff = requiresSignoff && canConfirmSignoff(module.id);
   const fullyComplete = passed && (!requiresSignoff || signedOff);
-  const tier = module.orderIndex <= 7 ? { route: '/programme/evaluation', label: '7-Day Evaluation' } : { route: '/programme/ph', label: 'PH Competency Path' };
+  // "Back to programme" target comes from the active programme's UI descriptor
+  // (PH: its evaluation/PH tracks; Amazon: the single Amazon journey).
+  const backLink = getActiveProgramme().ui.moduleBackLink(module);
 
   const lessonsHtml = lessons.map((lesson) => {
     const complete = progress.completedLessonIds.includes(lesson.id);
@@ -114,7 +117,7 @@ export function render(container, params) {
     <div class="breadcrumb">
       <button type="button" class="breadcrumb__link" data-nav="/dashboard">Dashboard</button>
       <span class="breadcrumb__sep" aria-hidden="true">/</span>
-      <button type="button" class="breadcrumb__link" data-nav="${tier.route}">${tier.label}</button>
+      <button type="button" class="breadcrumb__link" data-nav="${backLink.route}">${backLink.label}</button>
       <span class="breadcrumb__sep" aria-hidden="true">/</span>
       <span class="breadcrumb__current">${module.title}</span>
     </div>
@@ -122,7 +125,7 @@ export function render(container, params) {
     <section class="panel">
       <div class="panel__header-row">
         <h1 id="module-title-text">${module.title}</h1>
-        <button type="button" class="btn btn--ghost" data-nav="${tier.route}">Back to Programme</button>
+        <button type="button" class="btn btn--ghost" data-nav="${backLink.route}">Back to Programme</button>
       </div>
       ${renderTranslationControl('module-title-translate', 'Tamil translation for this module title')}
       <p class="muted" id="module-summary-text">${module.summary}</p>
@@ -148,7 +151,7 @@ export function render(container, params) {
       ${!passed && canAttempt
         ? `<button type="button" class="btn btn--primary" data-nav="/quiz/${module.id}">${attempts.length > 0 ? 'Retry Skill Check' : 'Start Skill Check'}</button>`
         : ''}
-      ${fullyComplete ? `<button type="button" class="btn btn--primary" data-nav="${tier.route}">Continue to Programme</button>` : ''}
+      ${fullyComplete ? `<button type="button" class="btn btn--primary" data-nav="${backLink.route}">Continue to Programme</button>` : ''}
     </section>
 
     ${signoffSectionHtml}

@@ -8,3 +8,8 @@
 
 # Node dependency output, in case anything is ever installed at the root.
 node_modules/
+
+# Confidential source documents — read-only final truth, kept out of version
+# control (the sourced programme content lives in tosp/js/programmes/ instead).
+Amazon_Team/
+PH_Team/
