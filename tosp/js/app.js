@@ -19,6 +19,8 @@ import * as lessonView from './views/lesson-view.js';
 import * as quizView from './views/quiz-view.js';
 import * as completionView from './views/completion-view.js';
 import * as translationReviewView from './views/translation-review-view.js';
+import * as practicalTaskView from './views/practical-task-view.js';
+import { PRACTICAL_TASK } from './data.js';
 
 const shellNavEl = document.getElementById('app-shell-nav');
 const mainEl = document.getElementById('app-main');
@@ -58,6 +60,16 @@ registerRoute('/translation-review', () => {
     return;
   }
   mount('translation-review', translationReviewView.render);
+});
+// Final practical task is currently Digital-Marketing-only. When the active
+// programme's content bundle has no PRACTICAL_TASK (PH/Amazon/eBay), this
+// route redirects to the dashboard so the screen never renders for them.
+registerRoute('/practical-task', () => {
+  if (!PRACTICAL_TASK) {
+    navigate('/dashboard');
+    return;
+  }
+  mount('practical-task', practicalTaskView.render);
 });
 registerNotFound(() => mount('dashboard', dashboardView.render));
 

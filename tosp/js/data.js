@@ -27,3 +27,7 @@ export const MODULES = C.MODULES;
 export const LESSONS = C.LESSONS;
 export const QUIZZES = C.QUIZZES;
 export const QUESTIONS = C.QUESTIONS;
+// Optional, programme-specific: only the Digital Marketing Team programme
+// currently defines this (a non-gating final practical task). Undefined for
+// every other programme's content bundle — consumers must guard on presence.
+export const PRACTICAL_TASK = C.PRACTICAL_TASK;

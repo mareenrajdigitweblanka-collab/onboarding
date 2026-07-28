@@ -14,9 +14,10 @@
 import { phTeamProgramme } from './ph-team-programme.js';
 import { amazonTeamProgramme } from './amazon-team-programme.js';
 import { ebayTeamProgramme } from './ebay-team-programme.js';
+import { digitalMarketingTeamProgramme } from './digital-marketing-team-programme.js';
 
 // Order here is the order programmes appear in the switcher.
-export const PROGRAMMES = [phTeamProgramme, amazonTeamProgramme, ebayTeamProgramme];
+export const PROGRAMMES = [phTeamProgramme, amazonTeamProgramme, ebayTeamProgramme, digitalMarketingTeamProgramme];
 
 // PROTOTYPE_ONLY — its own key, never touched by any programme's progress
 // reset (which only clears that programme's own storage key) or by the theme.
