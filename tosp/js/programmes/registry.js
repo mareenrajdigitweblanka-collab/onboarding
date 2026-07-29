@@ -18,9 +18,10 @@ import { digitalMarketingTeamProgramme } from './digital-marketing-team-programm
 import { purchasingTeamProgramme } from './purchasing-team-programme.js';
 import { centralizedPpcTeamProgramme } from './centralized-ppc-team-programme.js';
 import { customerServiceTeamProgramme } from './customer-service-team-programme.js';
+import { usCanadaMarketRebuildTeamProgramme } from './us-canada-market-rebuild-team-programme.js';
 
 // Order here is the order programmes appear in the switcher.
-export const PROGRAMMES = [phTeamProgramme, amazonTeamProgramme, ebayTeamProgramme, digitalMarketingTeamProgramme, purchasingTeamProgramme, centralizedPpcTeamProgramme, customerServiceTeamProgramme];
+export const PROGRAMMES = [phTeamProgramme, amazonTeamProgramme, ebayTeamProgramme, digitalMarketingTeamProgramme, purchasingTeamProgramme, centralizedPpcTeamProgramme, customerServiceTeamProgramme, usCanadaMarketRebuildTeamProgramme];
 
 // PROTOTYPE_ONLY — its own key, never touched by any programme's progress
 // reset (which only clears that programme's own storage key) or by the theme.
