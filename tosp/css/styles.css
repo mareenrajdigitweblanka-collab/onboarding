@@ -650,7 +650,9 @@ code {
 
 .badge--locked { background: var(--color-border); color: var(--color-text-muted); }
 .badge--available { background: var(--color-primary-soft); color: var(--color-primary); }
+.badge--ready { background: var(--color-primary-soft); color: var(--color-primary); }
 .badge--in-progress { background: var(--color-warning-bg); color: var(--color-warning); }
+.badge--attempts-exhausted { background: var(--color-danger-bg); color: var(--color-danger); }
 .badge--awaiting-signoff { background: var(--color-warning-bg); color: var(--color-warning); }
 .badge--passed, .badge--complete { background: var(--color-success-bg); color: var(--color-success); }
 .badge--failed { background: var(--color-danger-bg); color: var(--color-danger); }
@@ -692,6 +694,8 @@ code {
 .module-card--locked { opacity: 0.75; }
 .module-card--passed { border-color: var(--color-success); }
 .module-card--awaiting-signoff { border-color: var(--color-warning); }
+.module-card--ready { border-color: var(--color-primary); }
+.module-card--attempts-exhausted { border-color: var(--color-danger); }
 
 .module-card__top { display: flex; align-items: center; justify-content: space-between; }
 .module-card__number { font-size: var(--font-size-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
@@ -825,6 +829,13 @@ code {
 
 .completion-panel { text-align: center; }
 .completion-panel .summary-grid { text-align: left; }
+.completion-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
 
 /* ---------------------------------------------------------------------
    Theme toggle
@@ -924,7 +935,7 @@ code {
   .panel-grid { grid-template-columns: 1fr; }
   .lesson-view__nav { flex-direction: column; }
   .lesson-view__nav .btn { width: 100%; }
-  .quiz-result .btn, .confirm-dialog__actions .btn { width: 100%; }
+  .quiz-result .btn, .confirm-dialog__actions .btn, .completion-panel__actions .btn { width: 100%; }
   .confirm-dialog__actions { flex-direction: column-reverse; }
   .toast-region { left: var(--space-3); right: var(--space-3); max-width: none; bottom: var(--space-3); }
 }
@@ -1031,3 +1042,70 @@ code {
   outline-offset: 2px;
 }
 .app-sidebar__programme-title { margin: 0; }
+
+/* ---------------------------------------------------------------------
+   Feature chips — compact indicator of which optional features (Tamil,
+   sign-off, practical task) a programme exposes. Icon + label always
+   together, matching the rest of the app's "never color alone" rule.
+   --------------------------------------------------------------------- */
+
+.feature-chip-row {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.feature-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+.feature-chip-row__empty { margin: var(--space-3) 0 0; }
+
+/* ---------------------------------------------------------------------
+   Programme selection / landing screen
+   --------------------------------------------------------------------- */
+
+.programme-select-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-4);
+}
+
+.programme-select-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.programme-select-card--active { border-color: var(--color-primary); }
+
+.programme-select-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.programme-select-card__team {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.programme-select-card__title { margin: 0; }
+.programme-select-card__purpose { margin: 0; color: var(--color-text-secondary); }
+.programme-select-card__meta { margin: 0; }
+.programme-select-card__actions { margin-top: auto; padding-top: var(--space-3); }

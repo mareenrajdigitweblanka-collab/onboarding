@@ -91,6 +91,16 @@ export function renderHeader(activeRoute) {
       <div class="app-sidebar__section app-sidebar__section--programme">
         ${programmeSwitcherHtml('desktop')}
         <p class="app-sidebar__programme-title muted small">${activeProgramme.shortTitle} — ${activeProgramme.team}</p>
+        <button
+          type="button"
+          class="nav-link ${activeRoute === 'programme-select' ? 'nav-link--active' : ''}"
+          data-nav="/programme-select"
+          data-shell-nav-item
+          aria-current="${activeRoute === 'programme-select' ? 'page' : 'false'}"
+        >
+          <span class="nav-link__icon" aria-hidden="true">▦</span>
+          <span class="nav-link__label">Browse All Programmes</span>
+        </button>
       </div>
 
       <div class="app-sidebar__section">

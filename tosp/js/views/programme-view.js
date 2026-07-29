@@ -18,6 +18,8 @@ const STATE_LEGEND = [
   { status: 'locked', note: 'Not yet available' },
   { status: 'available', note: 'Ready to start' },
   { status: 'in-progress', note: 'Lessons underway' },
+  { status: 'ready', note: 'Lessons complete — Skill Check not yet attempted' },
+  { status: 'attempts-exhausted', note: 'No Skill Check attempts remain' },
   { status: 'awaiting-signoff', note: 'Quiz passed, sign-off pending' },
   { status: 'passed', note: 'Fully complete' },
 ];

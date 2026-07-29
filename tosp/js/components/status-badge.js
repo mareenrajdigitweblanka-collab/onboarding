@@ -5,7 +5,9 @@
 const LABELS = {
   locked: { text: 'Locked', icon: '🔒' },
   available: { text: 'Available', icon: '●' },
+  ready: { text: 'Ready for Skill Check', icon: '◎' },
   'in-progress': { text: 'In Progress', icon: '◐' },
+  'attempts-exhausted': { text: 'Attempts Exhausted', icon: '⚠' },
   'awaiting-signoff': { text: 'Awaiting Sign-off', icon: '◔' },
   passed: { text: 'Passed', icon: '✓' },
   failed: { text: 'Failed', icon: '✗' },

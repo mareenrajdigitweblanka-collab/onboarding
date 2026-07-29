@@ -66,3 +66,31 @@ export function setActiveProgramme(id) {
   window.location.reload();
   return true;
 }
+
+/**
+ * Which optional learner-facing features a programme exposes, derived
+ * generically from its descriptor (feature flags + content shape) rather
+ * than any hardcoded programme id. Shared by the programme-selection cards
+ * and the dashboard's feature summary so both stay in sync automatically as
+ * programmes are added or their config changes.
+ */
+export function programmeFeatureSummary(programme) {
+  return {
+    tamil: !!programme.features.enableTamilTranslation,
+    signoff: programme.content.MODULES.some((m) => m.requiresSignoff),
+    practicalTask: !!programme.ui.practicalTask,
+  };
+}
+
+/** First sentence (or a length-capped lead-in) of a programme's description, for compact card copy. Falls back to a truncated string if no sentence break is found within the cap. */
+export function programmeShortPurpose(programme, maxLen = 170) {
+  const text = programme.description || '';
+  const periodIndex = text.indexOf('. ');
+  if (periodIndex !== -1 && periodIndex <= maxLen) {
+    return text.slice(0, periodIndex + 1);
+  }
+  if (text.length <= maxLen) return text;
+  const cut = text.slice(0, maxLen);
+  const lastSpace = cut.lastIndexOf(' ');
+  return `${cut.slice(0, lastSpace > 0 ? lastSpace : maxLen)}…`;
+}

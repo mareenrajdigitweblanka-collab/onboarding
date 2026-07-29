@@ -8,6 +8,11 @@ import { confirmDialog } from '../components/confirm-dialog.js';
 import { showToast } from '../components/toast.js';
 import { navigate } from '../router.js';
 
+const CERTIFICATION_DISCLAIMER =
+  'This completion summary is generated and stored entirely in this browser and is not an official ' +
+  'employment, onboarding, certification, competency, purchasing-authorisation, advertising-account, or ' +
+  'seller-account approval of any kind. It does not represent management authorisation.';
+
 export function render(container) {
   if (!programmeIsComplete()) {
     container.innerHTML = `
@@ -21,8 +26,11 @@ export function render(container) {
   }
 
   const activeProgramme = getActiveProgramme();
+  const ui = activeProgramme.ui;
   const progress = getProgress();
   const overall = getOverallProgress();
+  const lessonsCompleted = progress.completedLessonIds.length;
+  const skillChecksPassed = progress.passedQuizIds.length;
   const completedDate = progress.completedAt
     ? new Date(progress.completedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
     : '—';
@@ -41,9 +49,16 @@ export function render(container) {
         <div><dt>Version</dt><dd>${PROGRAMME.version}</dd></div>
         <div><dt>Completion date</dt><dd>${completedDate}</dd></div>
         <div><dt>Modules completed</dt><dd>${overall.completedModuleCount} / ${overall.totalModules}</dd></div>
+        <div><dt>Lessons completed</dt><dd>${lessonsCompleted}</dd></div>
+        <div><dt>Skill Checks passed</dt><dd>${skillChecksPassed}</dd></div>
         <div><dt>Status</dt><dd><span class="badge badge--demo">PROTOTYPE_ONLY</span></dd></div>
       </dl>
-      <p class="muted small">This completion summary is generated and stored entirely in this browser (PROTOTYPE_ONLY) and is <strong>not</strong> an official employment, onboarding, or competency certificate.</p>
+      <p class="muted small"><strong>PROTOTYPE_ONLY.</strong> ${CERTIFICATION_DISCLAIMER}</p>
+      <div class="completion-panel__actions">
+        <button type="button" class="btn btn--primary" data-nav="/dashboard">Back to Dashboard</button>
+        <button type="button" class="btn btn--ghost" data-nav="/programme">Review Programme</button>
+        ${ui.practicalTask ? `<button type="button" class="btn btn--ghost" data-nav="${ui.practicalTask.route}">${ui.practicalTask.label}</button>` : ''}
+      </div>
     </section>
 
     <section class="panel danger-zone">

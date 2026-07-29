@@ -25,6 +25,7 @@ import { calculateOverallProgress, calculateModuleProgress } from '../rules/prog
 import { getAttempts } from '../services/quiz-service.js';
 import { moduleCard } from '../components/module-card.js';
 import { statusBadge } from '../components/status-badge.js';
+import { featureChipsRow } from '../components/feature-chips.js';
 
 function readinessRow(label, ready, note) {
   return `
@@ -40,7 +41,8 @@ function readinessRow(label, ready, note) {
 }
 
 export function render(container) {
-  const ui = getActiveProgramme().ui;
+  const activeProgramme = getActiveProgramme();
+  const ui = activeProgramme.ui;
   const progress = getProgress();
   const overall = getOverallProgress();
   const nextModule = determineNextModule(MODULES, progress);
@@ -96,6 +98,7 @@ export function render(container) {
       <h1>Welcome back, ${DEMO_LEARNER.displayName}</h1>
       <p class="muted">${PROGRAMME.title} <span class="muted small">· v${PROGRAMME.version}</span></p>
       <p class="muted">${PROGRAMME.description}</p>
+      ${featureChipsRow(activeProgramme)}
     </section>
 
     <section class="panel-grid">

@@ -13,6 +13,7 @@ import { FEATURES } from './config.js';
 
 import * as dashboardView from './views/dashboard-view.js';
 import * as programmeView from './views/programme-view.js';
+import * as programmeSelectView from './views/programme-select-view.js';
 import * as sourcesView from './views/sources-view.js';
 import * as moduleView from './views/module-view.js';
 import * as lessonView from './views/lesson-view.js';
@@ -43,6 +44,7 @@ function mount(routeName, viewRenderFn, params) {
 }
 
 registerRoute('/dashboard', () => mount('dashboard', dashboardView.render));
+registerRoute('/programme-select', () => mount('programme-select', programmeSelectView.render));
 registerRoute('/programme', () => mount('programme', (c) => programmeView.render(c, { tier: 'all' })));
 registerRoute('/programme/evaluation', () => mount('programme-evaluation', (c) => programmeView.render(c, { tier: 'evaluation' })));
 registerRoute('/programme/ph', () => mount('programme-ph', (c) => programmeView.render(c, { tier: 'ph' })));
