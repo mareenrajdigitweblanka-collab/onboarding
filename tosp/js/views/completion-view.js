@@ -43,6 +43,7 @@ export function render(container) {
     <section class="panel completion-panel">
       <h1><span aria-hidden="true">🎉</span> Congratulations, ${DEMO_LEARNER.displayName}!</h1>
       <p class="muted">You have completed the ${PROGRAMME.title}.</p>
+      ${ui.scopeNote ? `<p class="muted small"><strong>${ui.scopeNote}</strong></p>` : ''}
       <dl class="summary-grid">
         <div><dt>Team</dt><dd>${activeProgramme.team}</dd></div>
         <div><dt>Programme</dt><dd>${PROGRAMME.title}</dd></div>
