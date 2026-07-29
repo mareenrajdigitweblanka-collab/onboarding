@@ -3,6 +3,7 @@
 
 import { MODULES, QUESTIONS, QUIZZES } from '../data.js';
 import { CONFIG } from '../config.js';
+import { getActiveProgramme } from '../programmes/registry.js';
 import { canOpenModule, lessonsReadyForQuiz, moduleRequiresSignoff } from '../services/progress-service.js';
 import {
   getAttempts,
@@ -50,10 +51,14 @@ function renderResult(container, module, result, quiz) {
   const nextModule = MODULES[module.orderIndex]; // orderIndex is 1-based, array is 0-based -> next module.
   const requiresSignoff = moduleRequiresSignoff(module.id);
 
+  // Programme-owned copy (see ph-team-programme.js's ui.signoffNextStepText)
+  // so this shared view carries no hardcoded programme-specific citation.
+  const signoffNextStepText = getActiveProgramme().ui.signoffNextStepText || 'This module also requires sign-off before the next module unlocks.';
+
   let passedNextStepHtml;
   if (requiresSignoff) {
     passedNextStepHtml = `
-      <p>This module also requires a Team Leader Sign-off before the next module unlocks (Source: PH/Sales BGCT Handbook v1.0 — Section 1, Checklist).</p>
+      <p>${signoffNextStepText}</p>
       ${statusBadge('awaiting-signoff')}
       <button type="button" class="btn btn--primary" data-nav="/module/${module.id}">Continue to Sign-off</button>
     `;

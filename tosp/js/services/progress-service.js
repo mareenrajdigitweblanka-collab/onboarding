@@ -4,6 +4,7 @@
 
 import { loadProgress, saveProgress, resetProgress as resetStoredProgress } from '../storage.js';
 import { MODULES, LESSONS, QUIZZES } from '../data.js';
+import { CONFIG } from '../config.js';
 import { calculateModuleProgress, calculateOverallProgress } from '../rules/progression.js';
 import {
   areRequiredLessonsComplete,
@@ -123,8 +124,12 @@ export function getActivitySummary() {
 }
 
 /**
- * UI status for a module card:
- * 'locked' | 'available' | 'in-progress' | 'awaiting-signoff' | 'passed'.
+ * UI status for a module card. This is a presentation-only derivation layered
+ * on top of the unchanged unlock/scoring/sign-off rules in module-access.js —
+ * it never alters access, attempt counting, or progression, only which label
+ * a given (already-computed) state maps to:
+ * 'locked' | 'available' | 'ready' | 'in-progress' | 'attempts-exhausted' |
+ * 'awaiting-signoff' | 'passed'.
  */
 export function getModuleStatus(moduleId) {
   const module = MODULES.find((m) => m.id === moduleId);
@@ -134,6 +139,11 @@ export function getModuleStatus(moduleId) {
   if (isModuleFullyComplete(module, progress)) return 'passed';
   if (!canAccessModule(module, progress, MODULES)) return 'locked';
   if (progress.passedQuizIds.includes(quizId)) return 'awaiting-signoff';
+
+  const attemptsMade = (progress.quizAttempts[quizId] || []).length;
+  if (attemptsMade >= CONFIG.maxAttempts) return 'attempts-exhausted';
+
+  if (attemptsMade === 0 && areRequiredLessonsComplete(moduleId, LESSONS, progress)) return 'ready';
 
   const mp = calculateModuleProgress(moduleId, LESSONS, { id: quizId }, progress, !!module.requiresSignoff);
   return mp.completedLessons > 0 ? 'in-progress' : 'available';

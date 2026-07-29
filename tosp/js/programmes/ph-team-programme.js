@@ -127,6 +127,21 @@ export const phTeamProgramme = {
       'PH/Sales BGCT Handbook v1.0 (status FINAL_TRUTH). Progress and sign-offs recorded here ' +
       'remain PROTOTYPE_ONLY.',
 
+    // Programme-specific sign-off copy, read generically by module-view.js and
+    // quiz-view.js (which carry no hardcoded programme text themselves — see
+    // ui.dashboardSourceBlurb/ui.sourcesIntro for the same pattern). Only PH
+    // sets module.requiresSignoff on any module today, so these are the only
+    // strings ever shown; any future programme that also requires sign-off
+    // would supply its own text here instead of inheriting PH's citation.
+    signoffExplanationText:
+      'The PH/Sales BGCT Handbook requires each learning step to be verified by team leader ' +
+      'sign-off before progression (Source: PH/Sales BGCT Handbook v1.0 — Section 1, Checklist). ' +
+      'Confirming below is a simulated, self-service prototype action — it is not performed or ' +
+      'verified by an actual team leader, and it is not official evidence of readiness.',
+    signoffNextStepText:
+      'This module also requires a Team Leader Sign-off before the next module unlocks ' +
+      '(Source: PH/Sales BGCT Handbook v1.0 — Section 1, Checklist).',
+
     sourcesIntro:
       'All programme content — modules, lessons, and Skill Check questions — is sourced directly ' +
       'from the two documents below and is status <strong>FINAL_TRUTH</strong>. Progress, quiz ' +

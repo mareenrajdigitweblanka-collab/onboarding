@@ -92,11 +92,9 @@ export function render(container, params) {
     quizStatusHtml = `${statusBadge('available')} <p class="muted">Attempts used: ${attempts.length} / ${CONFIG.maxAttempts}</p>`;
   }
 
-  const SIGNOFF_EXPLANATION_TEXT =
-    'The PH/Sales BGCT Handbook requires each learning step to be verified by team leader ' +
-    'sign-off before progression (Source: PH/Sales BGCT Handbook v1.0 — Section 1, Checklist). ' +
-    'Confirming below is a simulated, self-service prototype action — it is not performed or ' +
-    'verified by an actual team leader, and it is not official evidence of readiness.';
+  // Programme-owned copy (see ph-team-programme.js's ui.signoffExplanationText)
+  // so this shared view carries no hardcoded programme-specific citation.
+  const SIGNOFF_EXPLANATION_TEXT = getActiveProgramme().ui.signoffExplanationText || '';
 
   const signoffSectionHtml = requiresSignoff ? `
     <section class="panel signoff-panel">

@@ -15,6 +15,9 @@ export function moduleCard({ module, status, progressPct, lockReason, quizResult
   const lockNote = isLocked && lockReason
     ? `<p class="module-card__lock-reason"><span aria-hidden="true">🔒</span> ${lockReason}</p>`
     : '';
+  const exhaustedNote = status === 'attempts-exhausted'
+    ? `<p class="module-card__lock-reason"><span aria-hidden="true">⚠</span> No Skill Check attempts remain for this module. Contact your team leader or trainer.</p>`
+    : '';
 
   const quizResultHtml = quizResult
     ? `<p class="module-card__quiz-result">
@@ -47,6 +50,7 @@ export function moduleCard({ module, status, progressPct, lockReason, quizResult
       ${quizResultHtml}
       ${signoffHtml}
       ${lockNote}
+      ${exhaustedNote}
       <p class="module-card__source muted small">Source: ${module.source}</p>
       <div class="module-card__actions">${actionHtml}</div>
     </article>
